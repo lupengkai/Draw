@@ -1,10 +1,15 @@
 /**
  * Created by tage on 11/17/15.
  */
-public abstract class Function {
-    String name;
+public  class Function {
+    String name ;
+    Function() {
+        name="NULL";
+    }
 
-    public abstract double function(double param);
+    public  double function(double param){
+        return 0.0;
+    }
 }
 
 class Sin extends Function {

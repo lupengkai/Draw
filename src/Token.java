@@ -31,7 +31,9 @@ public class Token {
         this.func = func;
     }
 
-    public Token(){}
+    public Token(){
+        this.func= new Function();
+    }
 
     public TokenType getType() {
         return type;

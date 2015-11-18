@@ -22,6 +22,7 @@ public class test {
             int a = '\n';
             System.out.println(a=='\n');
             System.out.println("\0 2 \0");
+            System.out.println((char)65535);
 
         }
 

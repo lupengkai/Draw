@@ -272,7 +272,7 @@ public class Lexer {
         initScanner(args[0]);
 
         System.out.println("        type        lexeme        value        func");
-        System.out.println("__________________________________________________");
+        System.out.println("___________________________________________________");
         while (true) {
             token = getToken();
             if (token.getType() != TokenType.NONTOKEN )

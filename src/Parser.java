@@ -35,8 +35,6 @@ public class Parser {
     }
 
 
-
-
     /**
      * 先序遍历并打印表达式的语法树
      *
@@ -89,6 +87,14 @@ public class Parser {
 
     }
 
+    public static void callMatch(String s) {
+        System.out.println("matchtoken  " + s);
+    }
+
+    public static void treeTrace(ExprNode root) {
+        printSyntaxTree(root, 1);
+    }
+
 
     public static void parser(String fileName) {
         System.out.println("Enter Parser");
@@ -113,7 +119,7 @@ public class Parser {
         System.out.println("Enter Statement");
         switch (token.getType()) {
             case ORIGIN:
-                orignStatement();
+                originStatement();
                 break;
             case SCALE:
                 scaleStatement();
@@ -132,9 +138,9 @@ public class Parser {
     }
 
 
-    public static void orignStatement() {
+    public static void originStatement() {
         ExprNode tmp = new ExprNode();
-        System.out.println("Enter OrignStatement");
+        System.out.println("Enter OriginStatement");
         matchToken(TokenType.ORIGIN);
         matchToken(TokenType.IS);
         matchToken(TokenType.L_BRACKET);
@@ -142,40 +148,118 @@ public class Parser {
          * 获取表达式
          */
         tmp = expression();
+        originX = Semantic.getExprValue(tmp);
+        matchToken(TokenType.COMMA);
+        tmp = expression();
+        originY = Semantic.getExprValue(tmp);
+        matchToken(TokenType.R_BRACKET);
+        System.out.println("Back OriginStatement");
 
 
     }
 
     public static void scaleStatement() {
+        ExprNode tmp;
+        System.out.println("Enter ScaleStatement");
+        matchToken(TokenType.SCALE);
+        matchToken(TokenType.IS);
+        matchToken(TokenType.L_BRACKET);
+        tmp = expression();
+        scaleX = Semantic.getExprValue(tmp);
+        matchToken(TokenType.COMMA);
+        tmp = expression();
+        scaleY = Semantic.getExprValue(tmp);
+        matchToken(TokenType.R_BRACKET);
+        System.out.println("Back ScaleStatement");
 
     }
 
     public static void rotStatement() {
-
+        ExprNode tmp;
+        System.out.println("Enter RotStatement");
+        matchToken(TokenType.ROT);
+        matchToken(TokenType.IS);
+        tmp = expression();
+        rotAngle = Semantic.getExprValue(tmp);
+        System.out.println("Back Statement");
     }
 
     public static void forStatement() {
+        double start;
+        double end;
+        double step;
+        ExprNode startNode, endNode, stepNode, xNode, yNode;
+        System.out.println("Enter ForStatement");
+        matchToken(TokenType.FOR);
+        callMatch("FOR");
+        matchToken(TokenType.T);
+        callMatch("T");
+        matchToken(TokenType.FROM);
+        callMatch("FROM");
+        startNode = expression();
+        start = Semantic.getExprValue(startNode);
+        matchToken(TokenType.TO);
+        callMatch("TO");
+        endNode = expression();
+        end = Semantic.getExprValue(endNode);
+        matchToken(TokenType.STEP);
+        stepNode = expression();
+        step = Semantic.getExprValue(startNode);
+        matchToken(TokenType.DRAW);
+        callMatch("DRAW");
+        matchToken(TokenType.L_BRACKET);
+        callMatch("(");
+        xNode = expression();
+        matchToken(TokenType.COMMA);
+        callMatch(",");
+        yNode = expression();
+        matchToken(TokenType.R_BRACKET);
+        callMatch(")");
+        //
+        System.out.println("Back ForStatement");
+
 
     }
 
     public static ExprNode expression() {
-        ExprNode left, right;
-        TokenType tokenTmp;
-
+        ExprNode left = null;
+        ExprNode right = null;
+        TokenType tokenTmp;//存储暂时的变量类型信息,makeExprNode
         System.out.println("Enter Expression");
         left = term();
+        while (token.getType() == TokenType.PLUS || token.getType() == TokenType.MINUS) {
+            tokenTmp = token.getType();
+            matchToken(tokenTmp);
+            right = term();
+            left = makeExprNode(tokenTmp, left, right);
+        }
+        treeTrace(left);
+        System.out.println("Back Expression");
+        return left;
+
 
     }
 
     public static ExprNode term() {
-        ExprNode left, right;
+        ExprNode left = null;
+        ExprNode right = null;
         TokenType tokenTmp;
         left = factor();
+        while (token.getType() == TokenType.MUL || token.getType() == TokenType.DIV) {
+            tokenTmp = token.getType();
+            matchToken(tokenTmp);
+            right = factor();
+            left = makeExprNode(tokenTmp, left, right);//可以写到括号外
+        }
+
+        return left;
+
 
     }
 
     public static ExprNode factor() {
-        ExprNode left, right;
+        ExprNode left = null;
+        ExprNode right = null;
         if (token.type == TokenType.PLUS) {
             matchToken(TokenType.PLUS);
             right = factor();
@@ -184,26 +268,59 @@ public class Parser {
             right = factor();
             left = new ConstNode();
             left.setOpCode(TokenType.CONST_ID);
-            ((ConstNode)left).setConstValue(0.0);
-            right = makeExprNode()
+            ((ConstNode) left).setConstValue(0.0);
+            right = makeExprNode(TokenType.MINUS, left, right);
 
-        }
+        } else right = component();
+
+        return right;
+
 
     }
 
     public static ExprNode component() {
+        ExprNode left = null;
+        ExprNode right = null;
+        left = atom();
+        if (token.getType() == TokenType.POWER) {
+            matchToken(TokenType.POWER);
+            right = component();
+            left = makeExprNode(TokenType.POWER, left, right);
+        }
+        return left;
 
     }
 
     public static ExprNode atom() {
         Token t = token;
-        ExprNode address, temp;
+        ExprNode address = null;
+        ExprNode tmp = null;
 
         switch (token.type) {
             case CONST_ID:
                 matchToken(TokenType.CONST_ID);
-                address =
+                address = makeExprNode(t.getValue());
+                break;
+            case T:
+                matchToken(TokenType.T);
+                address = makeExprNode();
+                break;
+            case FUNC:
+                matchToken(TokenType.FUNC);
+                matchToken(TokenType.L_BRACKET);
+                tmp = expression();
+                address = makeExprNode(t.getFunc(), tmp);
+                matchToken(TokenType.R_BRACKET);
+                break;
+            case L_BRACKET:
+                matchToken(TokenType.L_BRACKET);
+                address = expression();
+                matchToken(TokenType.R_BRACKET);
+                break;
+            default:
+                syntaxError(2);
         }
+        return address;
     }
 
     /**
@@ -220,17 +337,23 @@ public class Parser {
 
     public static ExprNode makeExprNode(Function function, ExprNode tmp) {
         ExprNode expr = new FuncNode();
-
+        ((FuncNode) expr).setChild(tmp);
+        ((FuncNode) expr).setFunction(function);
+        return expr;
     }
 
     public static ExprNode makeExprNode() {
         ExprNode expr = new ParmNode();
-        ((ParmNode)expr).setParm(parameter);
+        ((ParmNode) expr).setParm(parameter);
         return expr;
     }
 
     public static ExprNode makeExprNode(TokenType opCode, ExprNode left, ExprNode right) {
-
+        ExprNode expr = new OperatorNode();
+        expr.setOpCode(opCode);
+        ((OperatorNode) expr).setLeft(left);
+        ((OperatorNode) expr).setRight(right);
+        return expr;
     }
 
     public static void main(String[] args) {
@@ -279,6 +402,10 @@ class OperatorNode extends ExprNode {
 }
 
 class FuncNode extends ExprNode {
+    FuncNode() {
+        setOpCode(TokenType.FUNC);
+    }
+
     private ExprNode child;
     private Function function;
 
@@ -316,6 +443,10 @@ class ConstNode extends ExprNode {
 }
 
 class ParmNode extends ExprNode {
+    ParmNode() {
+        super.setOpCode(TokenType.T);
+    }
+
     Double parm;
 
     public Double getParm() {

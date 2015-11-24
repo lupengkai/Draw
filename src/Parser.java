@@ -18,7 +18,7 @@ public class Parser extends Frame {
     public static ExprNode xNode;
     public static ExprNode yNode;
     public static Token token;
-    public static String filePath = "/home/tage/IdeaProjects/Draw/test";
+    public static String filePath;
 
     public static void fetchToken() throws Exception {
         token = Lexer.getToken();
@@ -421,7 +421,9 @@ public class Parser extends Frame {
 
         if (args.length < 1)
             System.out.println("please input Source File!");
-        new Parser().launchFrame();
+        Parser parser = new Parser();
+        filePath = args[0];
+        parser.launchFrame();
 
 
     }

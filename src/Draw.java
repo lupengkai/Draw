@@ -6,15 +6,24 @@ import java.awt.event.WindowEvent;
  * Created by tage on 11/24/15.
  */
 public class Draw extends Frame {
+    public static String filePath;
     public static final int WIDTH = 800;
     public static final int HEIGHT = 600;
 
 
     public void paint(Graphics g) {
-
-
+        try {
+            Parser.parser(filePath, g);
+        } catch (Parser.ErrTokenException e) {
+            e.printStackTrace();
+        } catch (Parser.NotExpectedException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            Lexer.closeScanner();
+        }
     }
-
     public void launchFrame() {
         setLocation(400, 300);
         setSize(WIDTH, HEIGHT);
@@ -44,7 +53,9 @@ public class Draw extends Frame {
 
 
     public static void main(String[] args) throws Exception {
-        new Draw().launchFrame();
+        Draw draw = new Draw();
+        filePath = args[0];
+        draw.launchFrame();
 
 
     }

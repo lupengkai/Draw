@@ -1,14 +1,24 @@
+import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+
 /**
  * Created by tage on 11/20/15.
  */
-public class Parser {
+public class Parser extends Frame {
     public static double parameter = 0;
     public static double originX = 0;
     public static double originY = 0;
-    public static double scaleX = 0;
-    public static double scaleY = 0;
+    public static double scaleX = 1.0;
+    public static double scaleY = 1.0;
     public static double rotAngle = 0;
+    public static double start = 0;
+    public static double end = 0;
+    public static double step = 0;
+    public static ExprNode xNode;
+    public static ExprNode yNode;
     public static Token token;
+    public static String filePath = "/home/tage/IdeaProjects/Draw/test";
 
     public static void fetchToken() throws Exception {
         token = Lexer.getToken();
@@ -24,9 +34,9 @@ public class Parser {
     public static void syntaxError(int caseOf) throws Exception {
         switch (caseOf) {
             case 1:
-                throw new ErrTokenException(Lexer.lineNo + "错误记号" + token.getLexeme());
+                throw new ErrTokenException("出错行数:" + Lexer.lineNo + " 错误记号:" + token.getLexeme());
             case 2:
-                throw new NotExpectedException(Lexer.lineNo + "不是预期记号" + token.getLexeme());
+                throw new NotExpectedException("出错行数:" + Lexer.lineNo + " 不是预期记号:" + token.getLexeme());
         }
 
     }
@@ -42,9 +52,6 @@ public class Parser {
             super(message);
         }
     }
-
-
-
 
 
     /**
@@ -108,26 +115,26 @@ public class Parser {
     }
 
 
-    public static void parser(String fileName) throws Exception {
+    public static void parser(String filePath, Graphics g) throws Exception {
         System.out.println("Enter Parser");
-        Lexer.initScanner(fileName);
+        Lexer.initScanner(filePath);
         fetchToken();
-        program();
+        program(g);
         Lexer.closeScanner();
         System.out.println("Back Parser");
         return;
     }
 
-    public static void program() throws Exception {
+    public static void program(Graphics g) throws Exception {
         System.out.println("Enter Program");
         while (token.getType() != TokenType.NONTOKEN) {
-            statement();
+            statement(g);
             matchToken(TokenType.SEMICO);
         }
         System.out.println("Back Program");
     }
 
-    public static void statement() throws Exception {
+    public static void statement(Graphics g) throws Exception {
         System.out.println("Enter Statement");
         switch (token.getType()) {
             case ORIGIN:
@@ -140,7 +147,7 @@ public class Parser {
                 rotStatement();
                 break;
             case FOR:
-                forStatement();
+                forStatement(g);
                 break;
             default:
                 syntaxError(2);
@@ -161,9 +168,11 @@ public class Parser {
          */
         tmp = expression();
         originX = Semantic.getExprValue(tmp);
+        delExprTree(tmp);
         matchToken(TokenType.COMMA);
         tmp = expression();
         originY = Semantic.getExprValue(tmp);
+        delExprTree(tmp);
         matchToken(TokenType.R_BRACKET);
         System.out.println("Back OriginStatement");
 
@@ -178,9 +187,11 @@ public class Parser {
         matchToken(TokenType.L_BRACKET);
         tmp = expression();
         scaleX = Semantic.getExprValue(tmp);
+        delExprTree(tmp);
         matchToken(TokenType.COMMA);
         tmp = expression();
         scaleY = Semantic.getExprValue(tmp);
+        delExprTree(tmp);
         matchToken(TokenType.R_BRACKET);
         System.out.println("Back ScaleStatement");
 
@@ -193,14 +204,12 @@ public class Parser {
         matchToken(TokenType.IS);
         tmp = expression();
         rotAngle = Semantic.getExprValue(tmp);
+        delExprTree(tmp);
         System.out.println("Back Statement");
     }
 
-    public static void forStatement() throws Exception {
-        double start;
-        double end;
-        double step;
-        ExprNode startNode, endNode, stepNode, xNode, yNode;
+    public static void forStatement(Graphics g) throws Exception {
+        ExprNode startNode, endNode, stepNode;
         System.out.println("Enter ForStatement");
         matchToken(TokenType.FOR);
         callMatch("FOR");
@@ -210,13 +219,17 @@ public class Parser {
         callMatch("FROM");
         startNode = expression();
         start = Semantic.getExprValue(startNode);
+        delExprTree(startNode);
         matchToken(TokenType.TO);
         callMatch("TO");
         endNode = expression();
+
         end = Semantic.getExprValue(endNode);
+        delExprTree(endNode);
         matchToken(TokenType.STEP);
         stepNode = expression();
-        step = Semantic.getExprValue(startNode);
+        step = Semantic.getExprValue(stepNode);
+        delExprTree(stepNode);
         matchToken(TokenType.DRAW);
         callMatch("DRAW");
         matchToken(TokenType.L_BRACKET);
@@ -227,7 +240,7 @@ public class Parser {
         yNode = expression();
         matchToken(TokenType.R_BRACKET);
         callMatch(")");
-        //
+        Draw.drawLoop(start, end, step, xNode, yNode, g);
         System.out.println("Back ForStatement");
 
 
@@ -373,16 +386,13 @@ public class Parser {
         root = null;
     }
 
-    public static void main(String[] args) {
+    public void paint(Graphics g) {
         try {
-
-
-            if (args.length < 1) {
-                System.out.println("please input Source File!");
-                return;
-            }
-
-            parser(args[0]);
+            parser(filePath, g);
+        } catch (ErrTokenException e) {
+            e.printStackTrace();
+        } catch (NotExpectedException e) {
+            e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -390,6 +400,31 @@ public class Parser {
         }
     }
 
+    public void launchFrame() {
+        setLocation(400, 300);
+        setSize(800, 600);
+        setBackground(Color.WHITE);
+        setTitle("Draw");
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                System.exit(0);
+            }
+        });
+        setVisible(true);
+        setResizable(false);
+
+    }
+
+    public static void main(String[] args) {
+
+
+        if (args.length < 1)
+            System.out.println("please input Source File!");
+        new Parser().launchFrame();
+
+
+    }
 }
 
 class ExprNode {
@@ -471,14 +506,12 @@ class ParmNode extends ExprNode {
         super.setOpCode(TokenType.T);
     }
 
-    Double parm;
-
     public Double getParm() {
-        return parm;
+        return Parser.parameter;
     }
 
     public void setParm(Double parm) {
-        this.parm = parm;
+        Parser.parameter = parm;
     }
 }
 

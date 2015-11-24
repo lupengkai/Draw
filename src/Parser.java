@@ -10,29 +10,41 @@ public class Parser {
     public static double rotAngle = 0;
     public static Token token;
 
-    public static void fetchToken() {
+    public static void fetchToken() throws Exception {
         token = Lexer.getToken();
         if (token.getType() == TokenType.ERRTOKEN) syntaxError(1);
     }
 
-    public static void matchToken(TokenType theToken) {
+    public static void matchToken(TokenType theToken) throws Exception {
         if (token.getType() != theToken) syntaxError(2);
         fetchToken();
     }
 
 
-    public static void syntaxError(int caseOf) {
+    public static void syntaxError(int caseOf) throws Exception {
         switch (caseOf) {
             case 1:
-                System.out.println(Lexer.lineNo + "错误记号" + token.getLexeme());
-                Lexer.closeScanner();
-                break;
+                throw new ErrTokenException(Lexer.lineNo + "错误记号" + token.getLexeme());
             case 2:
-                System.out.println(Lexer.lineNo + "不是预期记号" + token.getLexeme());
-                Lexer.closeScanner();
-                break;
+                throw new NotExpectedException(Lexer.lineNo + "不是预期记号" + token.getLexeme());
+        }
+
+    }
+
+    static class ErrTokenException extends Exception {
+        public ErrTokenException(String message) {
+            super(message);
         }
     }
+
+    static class NotExpectedException extends Exception {
+        public NotExpectedException(String message) {
+            super(message);
+        }
+    }
+
+
+
 
 
     /**
@@ -41,7 +53,7 @@ public class Parser {
      * @param root   根节点
      * @param indent
      */
-    public static void printSyntaxTree(ExprNode root, int indent) {
+    public static void printSyntaxTree(ExprNode root, int indent) throws Exception {
         int temp;
         for (temp = 1; temp < indent; temp++) System.out.print("\t");
         switch (root.getOpCode()) {
@@ -91,12 +103,12 @@ public class Parser {
         System.out.println("matchtoken  " + s);
     }
 
-    public static void treeTrace(ExprNode root) {
+    public static void treeTrace(ExprNode root) throws Exception {
         printSyntaxTree(root, 1);
     }
 
 
-    public static void parser(String fileName) {
+    public static void parser(String fileName) throws Exception {
         System.out.println("Enter Parser");
         Lexer.initScanner(fileName);
         fetchToken();
@@ -106,7 +118,7 @@ public class Parser {
         return;
     }
 
-    public static void program() {
+    public static void program() throws Exception {
         System.out.println("Enter Program");
         while (token.getType() != TokenType.NONTOKEN) {
             statement();
@@ -115,7 +127,7 @@ public class Parser {
         System.out.println("Back Program");
     }
 
-    public static void statement() {
+    public static void statement() throws Exception {
         System.out.println("Enter Statement");
         switch (token.getType()) {
             case ORIGIN:
@@ -138,7 +150,7 @@ public class Parser {
     }
 
 
-    public static void originStatement() {
+    public static void originStatement() throws Exception {
         ExprNode tmp = new ExprNode();
         System.out.println("Enter OriginStatement");
         matchToken(TokenType.ORIGIN);
@@ -158,7 +170,7 @@ public class Parser {
 
     }
 
-    public static void scaleStatement() {
+    public static void scaleStatement() throws Exception {
         ExprNode tmp;
         System.out.println("Enter ScaleStatement");
         matchToken(TokenType.SCALE);
@@ -174,7 +186,7 @@ public class Parser {
 
     }
 
-    public static void rotStatement() {
+    public static void rotStatement() throws Exception {
         ExprNode tmp;
         System.out.println("Enter RotStatement");
         matchToken(TokenType.ROT);
@@ -184,7 +196,7 @@ public class Parser {
         System.out.println("Back Statement");
     }
 
-    public static void forStatement() {
+    public static void forStatement() throws Exception {
         double start;
         double end;
         double step;
@@ -221,7 +233,7 @@ public class Parser {
 
     }
 
-    public static ExprNode expression() {
+    public static ExprNode expression() throws Exception {
         ExprNode left = null;
         ExprNode right = null;
         TokenType tokenTmp;//存储暂时的变量类型信息,makeExprNode
@@ -240,7 +252,7 @@ public class Parser {
 
     }
 
-    public static ExprNode term() {
+    public static ExprNode term() throws Exception {
         ExprNode left = null;
         ExprNode right = null;
         TokenType tokenTmp;
@@ -257,7 +269,7 @@ public class Parser {
 
     }
 
-    public static ExprNode factor() {
+    public static ExprNode factor() throws Exception {
         ExprNode left = null;
         ExprNode right = null;
         if (token.type == TokenType.PLUS) {
@@ -278,7 +290,7 @@ public class Parser {
 
     }
 
-    public static ExprNode component() {
+    public static ExprNode component() throws Exception {
         ExprNode left = null;
         ExprNode right = null;
         left = atom();
@@ -291,7 +303,7 @@ public class Parser {
 
     }
 
-    public static ExprNode atom() {
+    public static ExprNode atom() throws Exception {
         Token t = token;
         ExprNode address = null;
         ExprNode tmp = null;
@@ -356,15 +368,27 @@ public class Parser {
         return expr;
     }
 
-    public static void main(String[] args) {
-        if (args.length < 1) {
-            System.out.println("please input Source File!");
-            return;
-        }
-
-        parser(args[0]);
+    public static void delExprTree(ExprNode root) {
+        if (root == null) return;
+        root = null;
     }
 
+    public static void main(String[] args) {
+        try {
+
+
+            if (args.length < 1) {
+                System.out.println("please input Source File!");
+                return;
+            }
+
+            parser(args[0]);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            Lexer.closeScanner();
+        }
+    }
 
 }
 

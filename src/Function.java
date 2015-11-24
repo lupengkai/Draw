@@ -25,7 +25,7 @@ class Sin extends Function {
 
 class Cos extends Function {
     Cos() {
-        name = "sin";
+        name = "cos";
     }
 
     public double function(double param) {
